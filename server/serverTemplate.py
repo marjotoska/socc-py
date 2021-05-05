@@ -37,6 +37,7 @@ while True:
     #
     connectSocket, addr = serverSocket.accept()
     print("Client connected: " + str(addr))
+
     
     while True:
         data = connectSocket.recv(4096)
@@ -60,21 +61,20 @@ while True:
             connectSocket.sendall(b'FILENAME AND FILESIZE?')
             name, size = connectSocket.recv(1024).decode('utf-8').split(';')
             print(name, size)
+            size = int(size)
             connectSocket.sendall(b'READY FOR FILE')
 
             # receive file
             file = open(name, "wb")
             d = connectSocket.recv(1024)
-            while (d):
-                print(d)
+            while size:
                 file.write(d)
-                d = connectSocket.recv(1024)
+                size -= len(d)
+                d = connectSocket.recv(min(1024, size))
             file.close()
 
             file = open(name, "rb")
-            print("calc hash")
             hash = generate_md5_hash(file.read())
-            print("calculated hash")
             file.close()
 
             connectSocket.sendall(hash.encode('utf-8'))
@@ -87,16 +87,18 @@ while True:
             #find file
             for f in os.listdir('.'):
                 file = open(f, "rb")
-                if os.path.isfile(f) and id == generate_md5_hash(file.read()):
+                content = file.read()
+                if os.path.isfile(f) and id == generate_md5_hash(content):
                     target = f
+                    break
                 file.close()
 
             #send file
             file = open(f, "rb")
-            d = f.read(1024)
+            d = file.read(1024)
             while (d):
                 connectSocket.send(d)
-                d = f.read(1024)
+                d = file.read(1024)
             file.close()
 
     
