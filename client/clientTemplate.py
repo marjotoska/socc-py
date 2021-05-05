@@ -25,13 +25,8 @@ clientSocket = socket(AF_INET, SOCK_STREAM)
 #
 clientSocket.connect((serverURL, serverPort))
 print("Client connected to server: " + serverURL + ":" + str(serverPort))
-#
 # This client implements the following scenario:
 # 1. LIST_FILES
-
-#my code
-#list_f = input("type list_files: ")
-#print(list_f)
 
 clientSocket.sendall(b'LIST_FILES')
 
@@ -70,20 +65,22 @@ d = clientSocket.recv(1024) #file list
 
 print(d)
 
-id = d.decode('utf-8').split(";")[2]
+id, name, size = d.decode('utf-8').split(";")
 
 clientSocket.sendall(b'DOWNLOAD')
 
 print(clientSocket.recv(1024)) #send file id
 
-clientSocket.sendall(id)
+clientSocket.sendall(id.encode('utf-8'))
 
 #receive file
 file = open("New_file.jpg", "wb")
 d = clientSocket.recv(1024)
-while(d):
+size = int(size)
+while size:
     file.write(d)
-    d = clientSocket.recv(1024)
+    size -= len(d)
+    d = clientSocket.recv(min(1024, size))
 file.close()
 
 #compare hashes
@@ -96,12 +93,6 @@ file.close()
 
 #close client socket
 clientSocket.close()
-
-#send("Hello World!")
-#input()
-#send("Hello Everyone!")
-#input()
-#my code end
 
 # 2a. UPLOAD the specified file
 # 2b. Check MD5
